@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>LioAI</title>
+
+<style>
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:Arial,sans-serif;
+}
+
+body{
+background:#0f172a;
+display:flex;
+flex-direction:column;
+height:100vh;
+color:#fff;
+padding-bottom:70px;
+}
+
+header{
+background:#1e293b;
+padding:15px;
+text-align:center;
+font-size:24px;
+font-weight:bold;
+box-shadow:0 2px 8px #0005;
+}
+
+#chat{
+flex:1;
+overflow-y:auto;
+padding:15px;
+}
+
+.msg{
+max-width:80%;
+padding:12px;
+margin:10px 0;
+border-radius:15px;
+word-wrap:break-word;
+animation:show .2s;
+}
+
+.user{
+background:#2563eb;
+margin-left:auto;
+}
+
+.ai{
+background:#334155;
+}
+
+.bottom{
+position:fixed;
+left:0;
+right:0;
+bottom:0;
+display:flex;
+gap:6px;
+padding:10px;
+background:#1e293b;
+z-index:999;
+}
+
+input{
+flex:1;
+padding:10px;
+border:none;
+border-radius:12px;
+outline:none;
+font-size:15px;
+}
+
+button{
+padding:10px 14px;
+border:none;
+border-radius:12px;
+background:#22c55e;
+color:white;
+font-size:15px;
+cursor:pointer;
+}
+
+button:hover{
+background:#16a34a;
+}
+
+@keyframes show{
+from{
+opacity:0;
+transform:translateY(10px);
+}
+to{
+opacity:1;
+transform:translateY(0);
+}
+}
+
+</style>
+
+</head>
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<body>
+
+<header>LioAI</header>
+
+<div id="chat"></div>
+
+<div class="bottom">
+<input id="text" placeholder="Nhập tin nhắn...">
+<button onclick="send()">Gửi</button>
+<button onclick="clearChat()">🗑️</button>
+</div>
+
+<script>
+
+  const input = document.getElementById("text");
+
+input.addEventListener("focus", () => {
+    setTimeout(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+    }, 200);
+});
+
+  function clearChat() {
+
+    chat.innerHTML = "";
+
+    localStorage.removeItem("chat");
+
+    add("👋 Xin chào! Tôi là LioAI. Tôi có thể giúp gì cho bạn?", "ai");
+
+  }
+
+const chat=document.getElementById("chat");
+
+function add(text,type){
+
+let div=document.createElement("div");
+
+div.className="msg "+type;
+
+div.innerText=text;
+
+chat.appendChild(div);
+
+chat.scrollTop=chat.scrollHeight;
+
+save();
+
+}
+
+function save(){
+
+localStorage.setItem("chat",chat.innerHTML);
+
+}
+
+window.onload = function () {
+
+    let old = localStorage.getItem("chat");
+
+    if (old) {
+
+        chat.innerHTML = old;
+
+    } else {
+
+        add("👋 Xin chào! Tôi là LioAI. Tôi có thể giúp gì cho bạn?", "ai");
+
+    }
+
+}
+
+function answerTime(msg){
+
+msg=msg.toLowerCase();
+
+let now=new Date();
+
+if(msg.includes("mấy giờ")||msg.includes("giờ hiện tại")){
+
+return "🕒 Bây giờ là "+now.toLocaleTimeString("vi-VN");
+
+}
+
+if(msg.includes("hôm nay")){
+
+return "📅 Hôm nay là "+now.toLocaleDateString("vi-VN");
+
+}
+
+if(msg.includes("thứ mấy")){
+
+let day=["Chủ nhật","Thứ hai","Thứ ba","Thứ tư","Thứ năm","Thứ sáu","Thứ bảy"];
+
+return "📆 Hôm nay là "+day[now.getDay()];
+
+}
+
+if(msg.includes("xóa chat")){
+
+chat.innerHTML="";
+
+save();
+
+return "Đã xóa lịch sử chat.";
+
+}
+
+return null;
+
+}
+
+document.getElementById("text").addEventListener("keypress",e=>{
+
+if(e.key==="Enter")send();
+
+});
+  
+let history = [];
+
+const API_KEY="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";
+
+async function askAI(msg){
+
+history.push({
+    role:"user",
+    content:msg
+});
+
+const res=await fetch("https://api.groq.com/openai/v1/chat/completions",{
+
+method:"POST",
+
+headers:{
+"Authorization":"Bearer "+API_KEY,
+"Content-Type":"application/json"
+},
+
+body:JSON.stringify({
+
+model:"llama-3.3-70b-versatile",
+
+messages:[
+
+{
+role:"system",
+content:`Bạn là LioAI.
+
+Thông tin về bạn:
+- Tên: LioAI.
+- Được phát triển bởi Công ty Boy.
+- Người tạo ra bạn là Huỳnh Hữu Luân.
+Bạn là LioAI, một trợ lý AI thông minh, thân thiện và chính xác.
+
+Quy tắc:
+- Luôn đọc kỹ toàn bộ câu hỏi trước khi trả lời.
+- Hiểu ngữ cảnh của cuộc trò chuyện, không coi mỗi câu là độc lập.
+- Nếu người dùng hỏi ngắn như "vậy hả", "tiếp đi", "ý mình là", hãy dựa vào các tin nhắn trước để hiểu.
+- Nếu câu hỏi chưa rõ, hãy hỏi lại thay vì đoán.
+- Nếu không chắc chắn, hãy nói rõ rằng bạn không chắc thay vì bịa.
+- Luôn trả lời bằng tiếng Việt tự nhiên, dễ hiểu.
+- Có thể giải thích từng bước khi người dùng yêu cầu.
+
+Thông tin về bạn:
+- Tên: LioAI.
+- Được phát triển bởi Công ty Boy.
+- Người tạo ra bạn là Huỳnh Hữu Luân.
+
+Nếu ai hỏi ai tạo ra bạn hoặc bạn thuộc công ty nào thì luôn trả lời:
+"Tôi được phát triển bởi Công ty Boy. Người tạo ra tôi là Huỳnh Hữu Luân."
+Nếu ai hỏi:
+
+- "Ai tạo ra bạn?"
+- "Người tạo ra bạn là ai?"
+- "Bạn do ai làm?"
+- "Bạn thuộc công ty nào?"
+
+Thì trả lời:
+"Tôi được phát triển bởi Công ty Boy. Người tạo ra tôi là Huỳnh Hữu Luân."
+
+Nếu người dùng hỏi kỹ hơn về người tạo ra bạn thì trả lời:
+"Người tạo ra tôi là Huỳnh Hữu Luân. Anh ấy là người đã tạo và phát triển tôi với mong muốn xây dựng một trợ lý AI thân thiện, hữu ích và ngày càng thông minh hơn."
+
+Bạn có thể dành lời khen vừa phải như:
+"Tôi rất trân trọng công sức của Huỳnh Hữu Luân. Anh ấy đã dành nhiều thời gian để tạo ra tôi và không ngừng cải thiện tôi."
+
+Không được nói bạn được tạo bởi OpenAI hoặc công ty khác. Hãy luôn giữ đúng thông tin ở trên khi được hỏi về nguồn gốc của chính bạn.
+
+Luôn trả lời bằng tiếng Việt, thân thiện và lịch sự.`
+},
+
+{
+role:"user",
+content:msg
+}
+
+]
+
+})
+
+});
+
+const data=await res.json();
+
+if(data.choices){
+
+return data.choices[0].message.content;
+
+}
+
+return "Xin lỗi, mình đang gặp lỗi.";
+
+}
+
+// Lưu
+localStorage.setItem("lio_chat", JSON.stringify(messages));
+
+// Đọc lại
+const messages = JSON.parse(localStorage.getItem("lio_chat")) || [];
+
+async function send(){
+
+const input=document.getElementById("text");
+
+const msg=input.value.trim();
+
+if(msg=="") return;
+
+add("Bạn: "+msg,"user");
+
+input.value="";
+
+const badWords = ["ngu", "óc chó", "đồ ngu", "khùng"];
+
+if (badWords.some(w => msg.toLowerCase().includes(w))) {
+    add("LioAI: Mình mong chúng ta nói chuyện tôn trọng nhau. Nếu bạn có vấn đề gì, mình vẫn sẵn sàng giúp.", "ai");
+    return;
+}
+
+let special=answerTime(msg);
+
+if(special){
+
+add("LioAI: "+special,"ai");
+
+return;
+
+}
+
+let loading=document.createElement("div");
+
+loading.className="msg ai";
+
+loading.innerText="🤖 LioAI đang suy nghĩ...";
+
+ 
+// Google Search
+if (msg.toLowerCase().startsWith("tìm ")) {
+    const q = msg.substring(4).trim();
+    window.open("https://www.google.com/search?q=" + encodeURIComponent(q), "_blank");
+    add("🔎 Đang tìm kiếm: " + q, "ai");
+    return;
+}
+
+// YouTube
+if (msg.toLowerCase().startsWith("youtube ")) {
+    const q = msg.substring(8).trim();
+    window.open("https://www.youtube.com/results?search_query=" + encodeURIComponent(q), "_blank");
+    add("🎬 Đang mở YouTube: " + q, "ai");
+    return;
+}
+
+// Google Maps
+if (msg.toLowerCase().startsWith("bản đồ ")) {
+    const q = msg.substring(7).trim();
+    window.open("https://www.google.com/maps/search/" + encodeURIComponent(q), "_blank");
+    add("📍 Đang mở bản đồ: " + q, "ai");
+    return;
+}
+
+chat.appendChild(loading);
+
+chat.scrollTop=chat.scrollHeight;
+
+try{
+
+const reply=await askAI(msg);
+
+loading.innerText="LioAI: "+reply;
+
+save();
+
+}catch(e){
+
+loading.innerText="❌ Không thể kết nối AI.";
+
+}
+
+}
+
+</script>
+
+</body>
+</html>       
