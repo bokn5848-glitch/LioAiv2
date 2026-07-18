@@ -327,6 +327,21 @@ localStorage.setItem("lio_chat", JSON.stringify(messages));
 // Đọc lại
 const messages = JSON.parse(localStorage.getItem("lio_chat")) || [];
 
+async function taoAnh(prompt) {
+    const div = document.createElement("div");
+    div.className = "msg ai";
+
+    const img = document.createElement("img");
+    img.src = "https://image.pollinations.ai/prompt/" + encodeURIComponent(prompt);
+    img.style.maxWidth = "100%";
+    img.style.borderRadius = "12px";
+
+    div.appendChild(img);
+    chat.appendChild(div);
+    chat.scrollTop = chat.scrollHeight;
+    save();
+}
+
 async function send(){
 
 const input=document.getElementById("text");
@@ -391,17 +406,27 @@ chat.appendChild(loading);
 
 chat.scrollTop=chat.scrollHeight;
 
-try{
 
-const reply=await askAI(msg);
+try {
 
-loading.innerText="LioAI: "+reply;
+if (msg.toLowerCase().startsWith("tạo ảnh ")) {
+    loading.remove();
+
+    const prompt = msg.substring(9).trim();
+
+    await taoAnh(prompt);
+    return;
+}
+
+const reply = await askAI(msg);
+loading.innerText = "LioAI: " + reply;
 
 save();
 
-}catch(e){
+} catch(e) {
 
-loading.innerText="❌ Không thể kết nối AI.";
+console.error(e);
+loading.innerText = "❌ Không thể kết nối AI.";
 
 }
 
